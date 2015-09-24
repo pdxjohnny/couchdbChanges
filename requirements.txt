@@ -1,1 +1,3 @@
 couchdb
+SimpleHTTPSServer>=0.6.98
+stratus>=0.1.02
