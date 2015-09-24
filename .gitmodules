@@ -1,3 +1,6 @@
 [submodule "opts"]
 	path = opts
 	url = https://gist.github.com/235ac6469d775ceacf2e.git
+[submodule "comms"]
+	path = comms
+	url = https://gist.github.com/pdxjohnny/e1bcf803aa3cfa9cab9b

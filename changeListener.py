@@ -35,7 +35,7 @@ class service(stratus.stratus):
             changes = db.changes(since=since)
             since = changes["last_seq"]
             for changeset in changes["results"]:
-                print(changeset["id"])
+                self.call("couchdbImporter", "couchdbImport" changeset["id"])
 
 def main():
     # Set any options needed
