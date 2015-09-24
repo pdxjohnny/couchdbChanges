@@ -10,15 +10,15 @@ import opts
 SERVICE_NAME = "couchdbChangeListener"
 OPTS = {
      "dbServer": "http://localhost:5984/",
-     "sPort": stratus.PORT,
      "dbName": "dbName",
-     "sHost": "localhost"
+     "sHost": "localhost",
+     "sPort": stratus.PORT
 }
 OPTS_HELP = {
      "dbServer": "URL of couchdb server",
-     "sPort": "Port for stratus server",
      "dbName": "Name of database to watch",
-     "sHost": "Ip or hostname of stratus server"
+     "sHost": "Ip or hostname of stratus server",
+     "sPort": "Port for stratus server"
 }
 
 class service(stratus.stratus):
@@ -35,26 +35,20 @@ class service(stratus.stratus):
             changes = db.changes(since=since)
             since = changes["last_seq"]
             for changeset in changes["results"]:
-                try:
-                   doc = db[changeset["id"]]
-                except couchdb.http.ResourceNotFound:
-                   continue
-                else:
-                   print(doc)
+                print(changeset["id"])
 
 def main():
     # Set any options needed
     options = opts.parse(OPTS, OPTS_HELP)
-    # # Create the listener service
-    # to_launch = service()
-    # name = SERVICE_NAME + options["dbServer"] + options["dbName"]
-    # print(name)
-    # # Connect service to cluster
-    # to_launch.connect(name=name, host=options["sHost"], \
-    #     port=options["sPort"], service=SERVICE_NAME)
-    # # Host services
-    # while True:
-    #     time.sleep(300)
+    # Create the listener service
+    to_launch = service()
+    name = options["dbServer"] + options["dbName"]
+    # Connect service to cluster, so we know it is listening
+    to_launch.connect(name=name, host=options["sHost"], \
+        port=options["sPort"], service=SERVICE_NAME)
+    # Listen
+    to_launch.couchdbListen(dbServer=options["dbServer"], \
+        dbName=options["dbName"])
 
 if __name__ == '__main__':
     main()
