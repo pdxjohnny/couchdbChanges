@@ -1,41 +1,36 @@
-import stratus
-
 import opts
+import comms
 
+PADDING = 4
 OPTS = {
-    "host": "localhost",
-    "port": stratus.PORT,
-    "service": "couchdbChangeListener"
+     "host": "localhost",
+     "port": comms.PORT
 }
 OPTS_HELP = {
-     "host": "Ip or hostname of stratus server",
-     "port": "Port for stratus server",
-     "service": "Service to list"
+     "host": "Hostname or IP of master swarm server",
+     "port": "Port of master swarm server"
 }
 
-def byService(connected, serviceName):
-    """
-    Given the connected nodes this will list the ones that are of the
-    specified service
-    """
-    for node in connected:
-        if "service" in connected[node] and \
-            connected[node]["service"] == serviceName:
-            print(node)
+def countServices(services):
+    longest = 0
+    for serviceType in services:
+        if len(serviceType) > longest:
+            longest = len(serviceType)
+    for serviceType in services:
+        padding = " " * (longest - len(serviceType) + PADDING)
+        print "{0}:{1}{2}".format(serviceType, padding, \
+            len(services[serviceType]))
 
 def main():
-    """
-    Lists connected nodes in a service
-    """
-    # Set any options needed
     options = opts.parse(OPTS, OPTS_HELP)
-    # Create a client and connect to stratus server
-    client = stratus.client()
-    client.connect(**options)
-    # Get the connected clients
-    connected = client.connected()
-    # List the services reqested
-    byService(connected, options["service"])
+    client = comms.service()
+    client.keys("private.pem", "private.pem")
+    services, error = client.call("nodeList", \
+        options["host"], options["port"], {})
+    if not error:
+        countServices(services)
+    else:
+        raise comms.error(services, error)
 
 if __name__ == '__main__':
     main()

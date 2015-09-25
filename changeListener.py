@@ -1,54 +1,59 @@
-import sys
-import json
 import time
-import uuid
-import stratus
+import thread
 import couchdb
 
 import opts
+import comms
 
-SERVICE_NAME = "couchdbChangeListener"
-OPTS = {
+import defaults
+
+
+OPTS = defaults.options()
+OPTS.update({
      "dbServer": "http://localhost:5984/",
-     "dbName": "dbName",
-     "sHost": "localhost",
-     "sPort": stratus.PORT
-}
-OPTS_HELP = {
+     "dbName": "dbName"
+})
+OPTS_HELP = defaults.options_help()
+OPTS_HELP.update({
      "dbServer": "URL of couchdb server",
-     "dbName": "Name of database to watch",
-     "sHost": "Ip or hostname of stratus server",
-     "sPort": "Port for stratus server"
-}
+     "dbName": "Name of database to watch"
+})
 
-class service(stratus.stratus):
 
-    def couchdbListen(self, dbServer=OPTS["dbServer"], \
-        dbName=OPTS["dbName"]):
-        couch = couchdb.Server(dbServer)
+class Listener(comms.swarm):
 
-        # select database
-        db = couch[dbName]
+    def __init__(self):
+        super(Listener, self).__init__()
+        self.options = OPTS
 
+    def couchdbListen(self, options):
+        # Set the options
+        self.options = options
+        # Connect to couchdb
+        couch = couchdb.Server(options["dbServer"])
+        # Select database
+        db = couch[options["dbName"]]
+        # Get the last update sequence
         since = db.info()["update_seq"]
+        # Listen for changes forever
         while True:
             changes = db.changes(since=since)
+            # Update the update sequence
             since = changes["last_seq"]
+            # Distribute the importing
             for changeset in changes["results"]:
-                self.call("couchdbImporter", "couchdbImport" changeset["id"])
+                self.callDist("couchdbImporter", "couchdbImport", \
+                    options["sHost"], options["sPort"], changeset, \
+                    waitResponse=False)
 
 def main():
     # Set any options needed
     options = opts.parse(OPTS, OPTS_HELP)
-    # Create the listener service
-    to_launch = service()
-    name = options["dbServer"] + options["dbName"]
-    # Connect service to cluster, so we know it is listening
-    to_launch.connect(name=name, host=options["sHost"], \
-        port=options["sPort"], service=SERVICE_NAME)
-    # Listen
-    to_launch.couchdbListen(dbServer=options["dbServer"], \
-        dbName=options["dbName"])
+    swarmService = defaults.register(OPTS, OPTS_HELP, \
+        Listener, "couchdbListener")
+    swarmService.couchdbListen(options)
+    # Serve forever
+    defaults.serve()
 
 if __name__ == '__main__':
     main()
