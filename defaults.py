@@ -44,6 +44,7 @@ def register(default_opts, default_opts_help, ServiceClass, serviceName):
         # Give it time to start the swarm server so we can register
         # This is a problem because theres only one server in this case
         time.sleep(0.1)
+    swarmService.getKey(host=options["sHost"], port=options["sPort"])
     swarmService.registerWith(serviceName, password=options["sPass"], \
         host=options["sHost"], port=options["sPort"])
     return swarmService

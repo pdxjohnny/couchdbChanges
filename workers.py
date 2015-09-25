@@ -24,7 +24,8 @@ def countServices(services):
 def main():
     options = opts.parse(OPTS, OPTS_HELP)
     client = comms.service()
-    client.keys("private.pem", "private.pem")
+    client.keys("public.pem", "private.pem")
+    client.getKey(host=options["host"], port=options["port"])
     services, error = client.call("nodeList", \
         options["host"], options["port"], {})
     if not error:
